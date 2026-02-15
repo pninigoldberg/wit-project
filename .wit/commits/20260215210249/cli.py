@@ -1,5 +1,5 @@
 import click
-from repository import init_repository,commit_repository
+from repository import init_repository
 
 
 @click.group()
@@ -23,12 +23,6 @@ def add(path):
     print(f"ADD COMMAND CALLED: {path}")  # לבדיקה
     from repository import add_to_staging
     add_to_staging(path)
-
-
-@cli.command()
-@click.argument("message")
-def commit(message):
-    commit_repository(message)
 
 
 if __name__ == "__main__":

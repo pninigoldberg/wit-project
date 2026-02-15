@@ -29,3 +29,4 @@ def is_ignored(path):
             return True
 
     return False
+
