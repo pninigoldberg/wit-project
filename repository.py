@@ -1,5 +1,6 @@
 import os
 import shutil
+import filecmp
 from datetime import datetime
 from utils import is_ignored, create_directory
 
@@ -127,3 +128,95 @@ def clear_staging():
             os.remove(os.path.join(root, file))
         for dir in dirs:
             os.rmdir(os.path.join(root, dir))
+
+
+import os
+import filecmp
+
+def status_repository():
+    """
+    Show the status of the repository (staged / modified / untracked),
+    ignoring files and directories listed in .witignore.
+
+    Returns:
+        dict: {
+            "staged": list of files in the staging area,
+            "modified": list of files changed since last commit,
+            "untracked": list of new files not staged or committed
+        }
+    """
+
+    # קריאת הקובץ .witignore
+    def get_ignored_files():
+        ignored = set()
+        ignore_path = os.path.join(os.getcwd(), ".witignore")
+        if os.path.exists(ignore_path):
+            with open(ignore_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#"):  # דילוג על הערות ושורות ריקות
+                        ignored.add(line)
+        return ignored
+
+    ignored = get_ignored_files()
+
+    # יצירת מילון לתוצאות
+    status_dict = {
+        "staged": [],
+        "modified": [],
+        "untracked": []
+    }
+
+    # פונקציית עזר למציאת הקומיט האחרון
+    def get_latest_commit():
+        if not os.path.exists(COMMITS_DIR):
+            return None
+        commits = [d for d in os.listdir(COMMITS_DIR) if os.path.isdir(os.path.join(COMMITS_DIR, d))]
+        if not commits:
+            return None
+        latest = sorted(commits)[-1]
+        return os.path.join(COMMITS_DIR, latest)
+
+    latest_commit = get_latest_commit()
+
+    # איסוף כל הקבצים ב-staging
+    staged_files = []
+    for root, dirs, files in os.walk(STAGING_DIR):
+        for file in files:
+            rel_path = os.path.relpath(os.path.join(root, file), STAGING_DIR)
+            if rel_path in ignored:
+                continue
+            staged_files.append(rel_path)
+            status_dict["staged"].append(rel_path)
+
+    # איסוף כל הקבצים מהקומיט האחרון
+    committed_files = {}
+    if latest_commit:
+        for root, dirs, files in os.walk(latest_commit):
+            for file in files:
+                rel_path = os.path.relpath(os.path.join(root, file), latest_commit)
+                if rel_path in ignored:
+                    continue
+                committed_files[rel_path] = os.path.join(root, file)
+
+    # מעבר על כל קבצי תיקיית העבודה
+    for root, dirs, files in os.walk(os.getcwd()):
+        # הסרת תיקיות לא רצויות מהרשימה ש-os.walk יכנס בהן
+        dirs[:] = [d for d in dirs if d not in ignored]
+
+        for file in files:
+            rel_path = os.path.relpath(os.path.join(root, file), os.getcwd())
+            if rel_path in ignored:
+                continue  # דילוג על קבצים שמופיעים ב-.witignore
+
+            if rel_path in staged_files:
+                continue  # כבר ב-staging
+            elif rel_path in committed_files:
+                # בדיקה אם הקובץ השתנה מאז הקומיט האחרון
+                if not filecmp.cmp(os.path.join(root, file), committed_files[rel_path], shallow=False):
+                    status_dict["modified"].append(rel_path)
+            else:
+                # קובץ חדש שלא נמצא ב-staging ולא בקומיט
+                status_dict["untracked"].append(rel_path)
+
+    return status_dict

@@ -1,8 +1,10 @@
+
 import click
 from repository import init_repository,commit_repository
+from repository import status_repository
 
 
-@cli.group()
+@click.group()
 def cli():
     """WIT - a simple version control system"""
     pass
@@ -29,6 +31,36 @@ def add(path):
 @click.argument("message")
 def commit(message):
     commit_repository(message)
+
+
+@cli.command()
+def status():
+    """Show the status of the repository"""
+    s = status_repository()  # קורא לפונקציה מה-repository.py
+
+    # הדפסת קבצים ב-staged
+    print("STAGED:")
+    if s["staged"]:
+        for f in s["staged"]:
+            print(f"  {f}")
+    else:
+        print("  (none)")
+
+    # הדפסת קבצים modified
+    print("\nMODIFIED:")
+    if s["modified"]:
+        for f in s["modified"]:
+            print(f"  {f}")
+    else:
+        print("  (none)")
+
+    # הדפסת קבצים untracked
+    print("\nUNTRACKED:")
+    if s["untracked"]:
+        for f in s["untracked"]:
+            print(f"  {f}")
+    else:
+        print("  (none)")
 
 
 if __name__ == "__main__":
