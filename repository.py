@@ -1,5 +1,6 @@
 import os
 import shutil
+from datetime import datetime
 from utils import is_ignored, create_directory
 
 
@@ -67,3 +68,62 @@ def copy_to_staging(src_path):
     create_directory(dest_dir)
     shutil.copy2(src_path, dest_path)
     print(f"Added to staging: {relative_path}")
+
+
+
+COMMITS_DIR = os.path.join(".wit", "commits")
+
+def commit_repository(message):
+        """
+        Create a new commit from the staging area.
+        """
+
+        # בדיקה שהרפוזיטורי קיים
+        if not os.path.exists(WIT_DIR):
+            print("Repository not initialized.")
+            return
+
+        # בדיקה אם staging ריק
+        if not os.path.exists(STAGING_DIR) or not os.listdir(STAGING_DIR):
+            print("Nothing to commit.")
+            return
+
+        # יצירת מזהה ייחודי לקומיט (timestamp)
+        commit_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        new_commit_path = os.path.join(COMMITS_DIR, commit_id)
+
+        create_directory(new_commit_path)
+
+        # העתקת כל התוכן מה-staging ל-commit החדש
+        for root, dirs, files in os.walk(STAGING_DIR):
+            for file in files:
+                src_path = os.path.join(root, file)
+
+                # שומרים על מבנה תיקיות
+                relative_path = os.path.relpath(src_path, STAGING_DIR)
+                dest_path = os.path.join(new_commit_path, relative_path)
+
+                dest_dir = os.path.dirname(dest_path)
+                create_directory(dest_dir)
+
+                shutil.copy2(src_path, dest_path)
+
+        # שמירת הודעת commit
+        message_file = os.path.join(new_commit_path, "message.txt")
+        with open(message_file, "w") as f:
+            f.write(message)
+
+        # ניקוי staging אחרי commit
+        clear_staging()
+
+        print(f"Commit created: {commit_id}")
+
+def clear_staging():
+    """
+    Remove all files from the staging directory.
+    """
+    for root, dirs, files in os.walk(STAGING_DIR, topdown=False):
+        for file in files:
+            os.remove(os.path.join(root, file))
+        for dir in dirs:
+            os.rmdir(os.path.join(root, dir))
