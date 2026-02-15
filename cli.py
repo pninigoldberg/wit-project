@@ -2,7 +2,7 @@ import click
 from repository import init_repository,commit_repository
 
 
-@cli.group()
+@click.group()
 def cli():
     """WIT - a simple version control system"""
     pass
@@ -29,6 +29,15 @@ def add(path):
 @click.argument("message")
 def commit(message):
     commit_repository(message)
+
+
+
+@cli.command()
+@click.argument("commit_id")
+def checkout_command(commit_id):
+    """Checkout a specific commit safely"""
+    from repository import checkout
+    checkout(commit_id)
 
 
 if __name__ == "__main__":
