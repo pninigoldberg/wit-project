@@ -2,7 +2,7 @@ import click
 from repository import init_repository
 
 
-@click.group()
+@cli.group()
 def cli():
     """WIT - a simple version control system"""
     pass

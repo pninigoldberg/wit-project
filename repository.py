@@ -19,6 +19,11 @@ def init_repository():
     create_directory(os.path.join(WIT_DIR, "commits"))
     create_directory(os.path.join(WIT_DIR, "staging"))
 
+
+    head_path = os.path.join(WIT_DIR, "HEAD")
+    with open(head_path, "w") as f:
+        f.write("")   # HEAD מתחיל ריק
+
     print("Initialized empty wit repository.")
 
 STAGING_DIR = os.path.join(".wit", "staging")
