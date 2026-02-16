@@ -1,4 +1,3 @@
-
 import click
 from repository import init_repository,commit_repository
 from repository import status_repository
@@ -61,6 +60,15 @@ def status():
             print(f"  {f}")
     else:
         print("  (none)")
+
+
+
+@cli.command()
+@click.argument("commit_id")
+def checkout_command(commit_id):
+    """Checkout a specific commit safely"""
+    from repository import checkout
+    checkout(commit_id)
 
 
 if __name__ == "__main__":
