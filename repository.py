@@ -4,6 +4,7 @@ import filecmp
 from datetime import datetime
 from utils import is_ignored, create_directory
 
+
 WIT_DIR = ".wit"
 
 
@@ -203,8 +204,6 @@ def checkout(commit_id):
     # ------------------------
     for root, dirs, files in os.walk(commit_path):
         for file in files:
-            if file == "message.txt":
-                continue
             src_path = os.path.join(root, file)
             relative_path = os.path.relpath(src_path, commit_path)
             dest_path = os.path.join(os.getcwd(), relative_path)
@@ -219,6 +218,95 @@ def checkout(commit_id):
         f.write(commit_id)
 
     print(f"Checked out commit: {commit_id}")
+
+
+
+def checkout(commit_id):
+    """
+    Checkout a specific commit safely with uncommitted changes check.
+
+    Steps:
+    1. Verify that the commit exists.
+    2. Check for uncommitted changes (in staging and working directory).
+    3. Clear working directory (except .wit).
+    4. Copy files from commit to working directory.
+    5. Update HEAD.
+    """
+
+    # ------------------------
+    # 1. Commit path
+    # ------------------------
+    commit_path = os.path.join(COMMITS_DIR, commit_id)
+    if not os.path.exists(commit_path):
+        print(f"Error: commit '{commit_id}' does not exist.")
+        return
+
+    # ------------------------
+    # 2a. Check staging
+    # ------------------------
+    if os.path.exists(STAGING_DIR) and os.listdir(STAGING_DIR):
+        print("Error: There are uncommitted changes in staging. Commit or clear them first.")
+        return
+
+    # ------------------------
+    # 2b. Check working directory changes vs current HEAD
+    # ------------------------
+    head_file = os.path.join(WIT_DIR, "HEAD")
+    if os.path.exists(head_file):
+        with open(head_file, "r") as f:
+            current_commit = f.read().strip()
+
+        current_commit_path = os.path.join(COMMITS_DIR, current_commit)
+
+        # אם יש HEAD קיים – נבדוק את הקבצים
+        if os.path.exists(current_commit_path):
+            diff_files = []
+            for root, dirs, files in os.walk(os.getcwd()):
+                dirs[:] = [d for d in dirs if d != WIT_DIR]  # שמירה על הרפוזיטורי
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(file_path, os.getcwd())
+                    commit_file_path = os.path.join(current_commit_path, rel_path)
+                    # אם הקובץ שונה או לא קיים בקומיט הנוכחי
+                    if not os.path.exists(commit_file_path) or not filecmp.cmp(file_path, commit_file_path, shallow=False):
+                        diff_files.append(rel_path)
+            if diff_files:
+                print("Error: The following files have changes not committed:")
+                for f in diff_files:
+                    print(f" - {f}")
+                print("Commit or backup these files before checkout.")
+                return
+
+    # ------------------------
+    # 3. Clear working directory (except .wit)
+    # ------------------------
+    for root, dirs, files in os.walk(os.getcwd()):
+        dirs[:] = [d for d in dirs if d != WIT_DIR]
+        for file in files:
+            os.remove(os.path.join(root, file))
+
+    # ------------------------
+    # 4. Copy files from commit to working directory
+    # ------------------------
+    for root, dirs, files in os.walk(commit_path):
+        for file in files:
+            src_path = os.path.join(root, file)
+            relative_path = os.path.relpath(src_path, commit_path)
+            dest_path = os.path.join(os.getcwd(), relative_path)
+            create_directory(os.path.dirname(dest_path))
+            shutil.copy2(src_path, dest_path)
+
+    # ------------------------
+    # 5. Update HEAD
+    # ------------------------
+    head_path = os.path.join(WIT_DIR, "HEAD")
+    with open(head_path, "w") as f:
+        f.write(commit_id)
+
+    print(f"Checked out commit: {commit_id}")
+
+
+
 
 
 
