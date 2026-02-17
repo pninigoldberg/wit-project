@@ -1,0 +1,11 @@
+README.md
+cli.py
+repository.py
+setup.py
+utils.py
+wit.egg-info/PKG-INFO
+wit.egg-info/SOURCES.txt
+wit.egg-info/dependency_links.txt
+wit.egg-info/entry_points.txt
+wit.egg-info/requires.txt
+wit.egg-info/top_level.txt

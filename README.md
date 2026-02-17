@@ -32,3 +32,9 @@ All metadata is stored inside a hidden `.wit` directory.
 - JSON / file-based metadata storage
 
 ---
+
+
+
+להוסף כדי שיהיה אפשר להריץ רק wit init
+
+ .\venv\Scripts\Activate.ps1   
