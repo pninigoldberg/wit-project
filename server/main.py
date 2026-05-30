@@ -136,9 +136,13 @@ def analyze_code(data: AnalyzeRequest):
     # FINAL RESPONSE
     # =====================================
 
+    graph_paths = generate_graphs(results)
+    print(graph_paths)
     return {
 
         "files_count": len(data.files),
 
-        "results": results
+        "results": results,
+
+        "graphs": graph_paths
     }
