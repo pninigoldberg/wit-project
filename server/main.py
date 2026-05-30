@@ -24,9 +24,8 @@ from server.models.request_models import AnalyzeRequest
 from server.ast_engine.parser import parse_code
 from server.ast_engine.analyzer import analyze_tree
 from server.ast_engine.check import check_code_issues
+from server.graphs.graphs import generate_graphs
 
-# בעתיד:
-# from server.graphs.graphs import generate_graphs
 
 
 app = FastAPI()

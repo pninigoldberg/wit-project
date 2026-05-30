@@ -47,6 +47,8 @@ def create_function_lengths_histogram(results):
 
     plt.savefig(path)
 
+    plt.show()
+
     plt.close()
 
     return path
@@ -83,6 +85,8 @@ def create_issues_by_type_pie_chart(results):
     )
 
     plt.savefig(path)
+
+    plt.show()
 
     plt.close()
 
@@ -126,6 +130,8 @@ def create_issues_per_file_bar_chart(results):
     )
 
     plt.savefig(path)
+
+    plt.show()
 
     plt.close()
 
