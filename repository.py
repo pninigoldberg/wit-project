@@ -70,8 +70,6 @@ def copy_to_staging(src_path):
     shutil.copy2(src_path, dest_path)
     print(f"Added to staging: {relative_path}")
 
-
-
 COMMITS_DIR = os.path.join(".wit", "commits")
 
 def commit_repository(message):
@@ -216,10 +214,196 @@ def checkout(commit_id):
 
     print(f"Checked out commit: {commit_id}")
 
+def push_repository():
+    """
+    Send the latest commit to the analysis server.
+    """
 
+    # =========================
+    # CHECK REPOSITORY
+    # =========================
 
+    if not os.path.exists(WIT_DIR):
+        print("Repository not initialized.")
+        return
 
+    # =========================
+    # READ HEAD
+    # =========================
 
+    head_path = os.path.join(WIT_DIR, "HEAD")
+
+    if not os.path.exists(head_path):
+        print("HEAD file not found.")
+        return
+
+    with open(head_path, "r") as f:
+        commit_id = f.read().strip()
+
+    if not commit_id:
+        print("No commits found.")
+        return
+
+    # =========================
+    # FIND LAST COMMIT
+    # =========================
+
+    commit_path = os.path.join(
+        COMMITS_DIR,
+        commit_id
+    )
+
+    if not os.path.exists(commit_path):
+        print("Latest commit directory not found.")
+        return
+
+    # =========================
+    # COLLECT PYTHON FILES
+    # =========================
+
+    files_data = []
+
+    for root, dirs, files in os.walk(commit_path):
+
+        for file in files:
+
+            if not file.endswith(".py"):
+                continue
+
+            file_path = os.path.join(root, file)
+
+            relative_path = os.path.relpath(
+                file_path,
+                commit_path
+            )
+
+            with open(
+                file_path,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                code = f.read()
+
+            files_data.append({
+
+                "filename": relative_path,
+
+                "code": code
+            })
+
+    # =========================
+    # CHECK FILES FOUND
+    # =========================
+
+    if not files_data:
+
+        print("No Python files found in latest commit.")
+        return
+
+    # =========================
+    # BUILD REQUEST
+    # =========================
+
+    payload = {
+        "files": files_data
+    }
+
+    # =========================
+    # SEND TO SERVER
+    # =========================
+
+    try:
+
+        response = requests.post(
+            "http://127.0.0.1:8000/analyze",
+            json=payload
+        )
+
+    except requests.exceptions.ConnectionError:
+
+        print("Cannot connect to analysis server.")
+        print("Make sure FastAPI server is running.")
+        return
+
+    # =========================
+    # CHECK RESPONSE
+    # =========================
+
+    if response.status_code != 200:
+
+        print(
+            f"Server returned status code "
+            f"{response.status_code}"
+        )
+        return
+
+    data = response.json()
+
+    # =========================
+    # DISPLAY RESULTS
+    # =========================
+
+    print("\nPush completed successfully.")
+    print(
+        f"Files analyzed: "
+        f"{data['files_count']}"
+    )
+
+    # =========================
+    # FILE RESULTS
+    # =========================
+
+    for result in data["results"]:
+
+        print("\n--------------------")
+        print(
+            f"File: "
+            f"{result['filename']}"
+        )
+
+        if not result["success"]:
+
+            print(
+                f"Error: "
+                f"{result['error']}"
+            )
+
+            continue
+
+        alerts = result["alerts"]
+
+        if not alerts:
+
+            print("No issues found.")
+
+        else:
+
+            print("Issues:")
+
+            for alert in alerts:
+
+                print(
+                    f"- {alert['type']}: "
+                    f"{alert['message']}"
+                )
+
+    # =========================
+    # GRAPH FILES
+    # =========================
+
+    if "graphs" in data:
+
+        print("\nGenerated graphs:")
+
+        for graph_name, path in data[
+            "graphs"
+        ].items():
+
+            print(
+                f"{graph_name}: "
+                f"{path}"
+            )
 
 def status_repository():
     """

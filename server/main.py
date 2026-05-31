@@ -1,4 +1,5 @@
-"""from fastapi import FastAPI
+"""
+from fastapi import FastAPI
 from server.models.request_models import AnalyzeRequest
 
 app = FastAPI()

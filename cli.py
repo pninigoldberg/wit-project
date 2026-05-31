@@ -1,4 +1,5 @@
 import click
+import requests
 from repository import init_repository,commit_repository
 from repository import status_repository
 
@@ -70,6 +71,11 @@ def checkout_command(commit_id):
     from repository import checkout
     checkout(commit_id)
 
+@cli.command()
+def push():
+    from repository import push_repository
+
+    push_repository()
 
 if __name__ == "__main__":
     cli()
